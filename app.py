@@ -18,9 +18,12 @@ def analyze():
         'quiet': True,
         'no_warnings': True,
         'skip_download': True,
+        'geo_bypass': True,
+        'nocheckcertificate': True,
         'extractor_args': {
             'youtube': {
-                'player_client': ['android', 'ios', 'web']
+                'player_client': ['tv', 'mweb', 'android_vr'],
+                'player_skip': ['webpage', 'configs']
             }
         }
     }
