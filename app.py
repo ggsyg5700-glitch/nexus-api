@@ -33,7 +33,7 @@ def analyze():
             video_streams = {}
             best_audio = None
             best_audio_abr = 0
-            allowed_heights = [360, 480, 720, 1080]
+            allowed_heights = (360, 480, 720, 1080)
 
             for f in formats:
                 vcodec = f.get('vcodec', 'none')
