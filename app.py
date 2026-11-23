@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-import yt_dlp
+from pytubefix import YouTube
 import os
 
 app = Flask(__name__)
@@ -14,55 +14,27 @@ def analyze():
     if not video_url:
         return jsonify({"status": "error", "message": "No URL provided"}), 400
 
-    ydl_opts = {
-        'quiet': True,
-        'no_warnings': True,
-        'skip_download': True,
-        'geo_bypass': True,
-        'nocheckcertificate': True,
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['tv', 'mweb', 'android_vr'],
-                'player_skip': ['webpage', 'configs']
-            }
-        }
-    }
-
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(video_url, download=False)
-            formats = info.get('formats', [])
+        yt = YouTube(video_url, client='WEB', use_po_token=True)
+        
+        video_streams = {}
+        allowed_heights = ('360p', '480p', '720p', '1080p')
 
-            video_streams = {}
-            best_audio = None
-            best_audio_abr = 0
-            allowed_heights = (360, 480, 720, 1080)
+        for stream in yt.streams.filter(file_extension='mp4', only_video=True):
+            if stream.video_codec and 'avc1' in stream.video_codec:
+                if stream.resolution in allowed_heights:
+                    video_streams[stream.resolution] = stream.url
 
-            for f in formats:
-                vcodec = f.get('vcodec', 'none')
-                acodec = f.get('acodec', 'none')
-                ext = f.get('ext', '')
-                url = f.get('url')
+        best_audio_stream = yt.streams.filter(only_audio=True, file_extension='mp4').order_by('abr').desc().first()
+        best_audio = best_audio_stream.url if best_audio_stream else None
 
-                if vcodec != 'none' and 'avc1' in vcodec and ext == 'mp4' and url:
-                    height = f.get('height')
-                    if height in allowed_heights:
-                        label = f"{height}p"
-                        video_streams[label] = url
-
-                if vcodec == 'none' and acodec != 'none' and ext == 'm4a' and url:
-                    abr = f.get('abr') or 0
-                    if abr > best_audio_abr:
-                        best_audio_abr = abr
-                        best_audio = url
-
-            return jsonify({
-                "status": "success",
-                "title": info.get('title', 'Video'),
-                "thumbnail": info.get('thumbnail', ''),
-                "videos": video_streams,
-                "best_audio": best_audio
-            })
+        return jsonify({
+            "status": "success",
+            "title": yt.title,
+            "thumbnail": yt.thumbnail_url,
+            "videos": video_streams,
+            "best_audio": best_audio
+        })
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
