@@ -15,7 +15,7 @@ def analyze():
         return jsonify({"status": "error", "message": "No URL provided"}), 400
 
     try:
-     yt = YouTube(video_url, client='ANDROID_VR') 
+        yt = YouTube(video_url, client='ANDROID_VR')
         
         video_streams = {}
         allowed_heights = ('360p', '480p', '720p', '1080p')
