@@ -1,2 +1,4 @@
 flask
-yt-dlp
+pytubefix
+nodejs-wheel-binaries
+
